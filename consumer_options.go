@@ -31,6 +31,7 @@ func getDefaultConsumerOptions(queueName string) ConsumerOptions {
 		Logger:          stdDebugLogger{},
 		QOSPrefetch:     10,
 		QOSGlobal:       false,
+		PreDeclare:      false,
 	}
 }
 
@@ -69,6 +70,7 @@ type ConsumerOptions struct {
 	Logger                logger.Logger
 	QOSPrefetch           int
 	QOSGlobal             bool
+	PreDeclare            bool
 }
 
 // RabbitConsumerOptions are used to configure the consumer
@@ -217,10 +219,12 @@ func WithConsumerOptionsExchangeArgs(args Table) func(*ConsumerOptions) {
 func WithConsumerOptionsRoutingKey(routingKey string) func(*ConsumerOptions) {
 	return func(options *ConsumerOptions) {
 		ensureExchangeOptions(options)
-		options.ExchangeOptions[0].Bindings = append(options.ExchangeOptions[0].Bindings, Binding{
-			RoutingKey:     routingKey,
-			BindingOptions: getDefaultBindingOptions(),
-		})
+		options.ExchangeOptions[0].Bindings = append(
+			options.ExchangeOptions[0].Bindings, Binding{
+				RoutingKey:     routingKey,
+				BindingOptions: getDefaultBindingOptions(),
+			},
+		)
 	}
 }
 

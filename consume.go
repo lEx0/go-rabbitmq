@@ -60,7 +60,11 @@ func NewConsumer(
 		return nil, errors.New("connection manager can't be nil")
 	}
 
-	chanManager, err := channelmanager.NewChannelManager(conn.connectionManager, options.Logger, conn.connectionManager.ReconnectInterval)
+	chanManager, err := channelmanager.NewChannelManager(
+		conn.connectionManager,
+		options.Logger,
+		conn.connectionManager.ReconnectInterval,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +77,12 @@ func NewConsumer(
 		options:                    *options,
 		isClosedMux:                &sync.RWMutex{},
 		isClosed:                   false,
+	}
+
+	if options.PreDeclare {
+		if err := consumer.declareResources(*options); err != nil {
+			return nil, err
+		}
 	}
 
 	return consumer, nil
@@ -124,6 +134,27 @@ func (consumer *Consumer) Close() {
 	}()
 }
 
+// declareResources it's a helper function to declare exchanges, queues and bindings
+// based on the options provided by the user.
+// It returns an error if any of the declarations fail
+func (consumer *Consumer) declareResources(options ConsumerOptions) error {
+	for _, exchangeOption := range options.ExchangeOptions {
+		if err := declareExchange(consumer.chanManager, exchangeOption); err != nil {
+			return fmt.Errorf("declare exchange failed: %w", err)
+		}
+	}
+
+	if err := declareQueue(consumer.chanManager, options.QueueOptions); err != nil {
+		return fmt.Errorf("declare queue failed: %w", err)
+	}
+
+	if err := declareBindings(consumer.chanManager, options); err != nil {
+		return fmt.Errorf("declare bindings failed: %w", err)
+	}
+
+	return nil
+}
+
 // startGoroutines declares the queue if it doesn't exist,
 // binds the queue to the routing key(s), and starts the goroutines
 // that will consume from the queue
@@ -139,19 +170,9 @@ func (consumer *Consumer) startGoroutines(
 	if err != nil {
 		return fmt.Errorf("declare qos failed: %w", err)
 	}
-	for _, exchangeOption := range options.ExchangeOptions {
-		err = declareExchange(consumer.chanManager, exchangeOption)
-		if err != nil {
-			return fmt.Errorf("declare exchange failed: %w", err)
-		}
-	}
-	err = declareQueue(consumer.chanManager, options.QueueOptions)
-	if err != nil {
-		return fmt.Errorf("declare queue failed: %w", err)
-	}
-	err = declareBindings(consumer.chanManager, options)
-	if err != nil {
-		return fmt.Errorf("declare bindings failed: %w", err)
+
+	if err := consumer.declareResources(options); err != nil {
+		return err
 	}
 
 	msgs, err := consumer.chanManager.ConsumeSafe(
@@ -180,7 +201,12 @@ func (consumer *Consumer) getIsClosed() bool {
 	return consumer.isClosed
 }
 
-func handlerGoroutine(consumer *Consumer, msgs <-chan amqp.Delivery, consumeOptions ConsumerOptions, handler Handler) {
+func handlerGoroutine(
+	consumer *Consumer,
+	msgs <-chan amqp.Delivery,
+	consumeOptions ConsumerOptions,
+	handler Handler,
+) {
 	for msg := range msgs {
 		if consumer.getIsClosed() {
 			break
