@@ -1,8 +1,8 @@
 package rabbitmq
 
 import (
+	"github.com/lEx0/go-rabbitmq/internal/connectionmanager"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/wagslane/go-rabbitmq/internal/connectionmanager"
 )
 
 // Conn manages the connection to a rabbit cluster
@@ -29,7 +29,12 @@ func NewConn(url string, optionFuncs ...func(*ConnectionOptions)) (*Conn, error)
 		optionFunc(options)
 	}
 
-	manager, err := connectionmanager.NewConnectionManager(url, amqp.Config(options.Config), options.Logger, options.ReconnectInterval)
+	manager, err := connectionmanager.NewConnectionManager(
+		url,
+		amqp.Config(options.Config),
+		options.Logger,
+		options.ReconnectInterval,
+	)
 	if err != nil {
 		return nil, err
 	}

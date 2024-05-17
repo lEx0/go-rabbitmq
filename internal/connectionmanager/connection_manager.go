@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lEx0/go-rabbitmq/internal/dispatcher"
+	"github.com/lEx0/go-rabbitmq/internal/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/wagslane/go-rabbitmq/internal/dispatcher"
-	"github.com/wagslane/go-rabbitmq/internal/logger"
 )
 
 // ConnectionManager -
@@ -23,7 +23,12 @@ type ConnectionManager struct {
 }
 
 // NewConnectionManager creates a new connection manager
-func NewConnectionManager(url string, conf amqp.Config, log logger.Logger, reconnectInterval time.Duration) (*ConnectionManager, error) {
+func NewConnectionManager(
+	url string,
+	conf amqp.Config,
+	log logger.Logger,
+	reconnectInterval time.Duration,
+) (*ConnectionManager, error) {
 	conn, err := amqp.DialConfig(url, amqp.Config(conf))
 	if err != nil {
 		return nil, err
@@ -82,7 +87,10 @@ func (connManager *ConnectionManager) startNotifyClose() {
 
 	err := <-notifyCloseChan
 	if err != nil {
-		connManager.logger.Errorf("attempting to reconnect to amqp server after connection close with error: %v", err)
+		connManager.logger.Errorf(
+			"attempting to reconnect to amqp server after connection close with error: %v",
+			err,
+		)
 		connManager.reconnectLoop()
 		connManager.logger.Warnf("successfully reconnected to amqp server")
 		connManager.dispatcher.Dispatch(err)
@@ -108,7 +116,10 @@ func (connManager *ConnectionManager) incrementReconnectionCount() {
 // reconnectLoop continuously attempts to reconnect
 func (connManager *ConnectionManager) reconnectLoop() {
 	for {
-		connManager.logger.Infof("waiting %s seconds to attempt to reconnect to amqp server", connManager.ReconnectInterval)
+		connManager.logger.Infof(
+			"waiting %s seconds to attempt to reconnect to amqp server",
+			connManager.ReconnectInterval,
+		)
 		time.Sleep(connManager.ReconnectInterval)
 		err := connManager.reconnect()
 		if err != nil {

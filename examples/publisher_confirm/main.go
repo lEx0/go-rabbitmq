@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	rabbitmq "github.com/wagslane/go-rabbitmq"
+	rabbitmq "github.com/lEx0/go-rabbitmq"
 )
 
 func main() {
@@ -34,9 +34,11 @@ func main() {
 	}
 	defer publisher.Close()
 
-	publisher.NotifyReturn(func(r rabbitmq.Return) {
-		log.Printf("message returned from server: %s", string(r.Body))
-	})
+	publisher.NotifyReturn(
+		func(r rabbitmq.Return) {
+			log.Printf("message returned from server: %s", string(r.Body))
+		},
+	)
 
 	// block main thread - wait for shutdown signal
 	sigs := make(chan os.Signal, 1)

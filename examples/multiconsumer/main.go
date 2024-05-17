@@ -8,7 +8,7 @@ import (
 	"sync"
 	"syscall"
 
-	rabbitmq "github.com/wagslane/go-rabbitmq"
+	rabbitmq "github.com/lEx0/go-rabbitmq"
 )
 
 func main() {
@@ -75,11 +75,13 @@ func main() {
 	go func() {
 		defer wg.Done()
 
-		err := consumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
-			log.Printf("consumed: %v", string(d.Body))
-			// rabbitmq.Ack, rabbitmq.NackDiscard, rabbitmq.NackRequeue
-			return rabbitmq.Ack
-		})
+		err := consumer.Run(
+			func(d rabbitmq.Delivery) rabbitmq.Action {
+				log.Printf("consumed: %v", string(d.Body))
+				// rabbitmq.Ack, rabbitmq.NackDiscard, rabbitmq.NackRequeue
+				return rabbitmq.Ack
+			},
+		)
 		if err != nil {
 			errs <- err
 		}
@@ -88,11 +90,13 @@ func main() {
 	go func() {
 		defer wg.Done()
 
-		err := consumer2.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
-			log.Printf("consumed: %v", string(d.Body))
-			// rabbitmq.Ack, rabbitmq.NackDiscard, rabbitmq.NackRequeue
-			return rabbitmq.Ack
-		})
+		err := consumer2.Run(
+			func(d rabbitmq.Delivery) rabbitmq.Action {
+				log.Printf("consumed: %v", string(d.Body))
+				// rabbitmq.Ack, rabbitmq.NackDiscard, rabbitmq.NackRequeue
+				return rabbitmq.Ack
+			},
+		)
 		if err != nil {
 			errs <- err
 		}

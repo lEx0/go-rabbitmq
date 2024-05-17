@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	rabbitmq "github.com/wagslane/go-rabbitmq"
+	rabbitmq "github.com/lEx0/go-rabbitmq"
 )
 
 func main() {
@@ -47,11 +47,13 @@ func main() {
 	}()
 
 	// block main thread - wait for shutdown signal
-	err = consumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
-		log.Printf("consumed: %v", string(d.Body))
-		// rabbitmq.Ack, rabbitmq.NackDiscard, rabbitmq.NackRequeue
-		return rabbitmq.Ack
-	})
+	err = consumer.Run(
+		func(d rabbitmq.Delivery) rabbitmq.Action {
+			log.Printf("consumed: %v", string(d.Body))
+			// rabbitmq.Ack, rabbitmq.NackDiscard, rabbitmq.NackRequeue
+			return rabbitmq.Ack
+		},
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/lEx0/go-rabbitmq/internal/channelmanager"
+	"github.com/lEx0/go-rabbitmq/internal/connectionmanager"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/wagslane/go-rabbitmq/internal/channelmanager"
-	"github.com/wagslane/go-rabbitmq/internal/connectionmanager"
 )
 
 // DeliveryMode. Transient means higher throughput but messages will not be
@@ -78,7 +78,11 @@ func NewPublisher(conn *Conn, optionFuncs ...func(*PublisherOptions)) (*Publishe
 		return nil, errors.New("connection manager can't be nil")
 	}
 
-	chanManager, err := channelmanager.NewChannelManager(conn.connectionManager, options.Logger, conn.connectionManager.ReconnectInterval)
+	chanManager, err := channelmanager.NewChannelManager(
+		conn.connectionManager,
+		options.Logger,
+		conn.connectionManager.ReconnectInterval,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +109,11 @@ func NewPublisher(conn *Conn, optionFuncs ...func(*PublisherOptions)) (*Publishe
 	}
 
 	if options.ConfirmMode {
-		publisher.NotifyPublish(func(_ Confirmation) {
-			// set a blank handler to set the channel in confirm mode
-		})
+		publisher.NotifyPublish(
+			func(_ Confirmation) {
+				// set a blank handler to set the channel in confirm mode
+			},
+		)
 	}
 
 	go func() {
@@ -115,7 +121,10 @@ func NewPublisher(conn *Conn, optionFuncs ...func(*PublisherOptions)) (*Publishe
 			publisher.options.Logger.Infof("successful publisher recovery from: %v", err)
 			err := publisher.startup()
 			if err != nil {
-				publisher.options.Logger.Fatalf("error on startup for publisher after cancel or close: %v", err)
+				publisher.options.Logger.Fatalf(
+					"error on startup for publisher after cancel or close: %v",
+					err,
+				)
 				publisher.options.Logger.Fatalf("publisher closing, unable to recover")
 				return
 			}
@@ -348,10 +357,12 @@ func (publisher *Publisher) startPublishHandler() {
 	go func() {
 		confirmationCh := publisher.chanManager.NotifyPublishSafe(make(chan amqp.Confirmation, 1))
 		for conf := range confirmationCh {
-			go publisher.notifyPublishHandler(Confirmation{
-				Confirmation:      conf,
-				ReconnectionCount: int(publisher.chanManager.GetReconnectionCount()),
-			})
+			go publisher.notifyPublishHandler(
+				Confirmation{
+					Confirmation:      conf,
+					ReconnectionCount: int(publisher.chanManager.GetReconnectionCount()),
+				},
+			)
 		}
 	}()
 }

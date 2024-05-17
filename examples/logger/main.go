@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	rabbitmq "github.com/wagslane/go-rabbitmq"
+	rabbitmq "github.com/lEx0/go-rabbitmq"
 )
 
 // errorLogger is used in WithPublisherOptionsLogger to create a custom logger
@@ -60,7 +60,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	publisher.NotifyReturn(func(r rabbitmq.Return) {
-		log.Printf("message returned from server: %s", string(r.Body))
-	})
+	publisher.NotifyReturn(
+		func(r rabbitmq.Return) {
+			log.Printf("message returned from server: %s", string(r.Body))
+		},
+	)
 }
